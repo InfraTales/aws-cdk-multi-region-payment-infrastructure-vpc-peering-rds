@@ -1,27 +1,3 @@
-/**
- * ═══════════════════════════════════════════════════════════════════════════
- *                              INFRATALES™
- *              Production-Ready AWS Infrastructure Solutions
- * ═══════════════════════════════════════════════════════════════════════════
- *
- * @project     aws-cdk-multi-region-payment-infrastructure-vpc-peering-rds
- * @file        lib/tap-stack.ts
- * @author      Rahul Ladumor <rahul.ladumor@infratales.com>
- * @copyright   Copyright (c) 2024-2026 Rahul Ladumor / InfraTales
- * @license     InfraTales Open Source License (see LICENSE file)
- *
- * @website     https://infratales.com
- * @github      https://github.com/InfraTales
- * @portfolio   https://www.rahulladumor.in
- *
- * ───────────────────────────────────────────────────────────────────────────
- * This file is part of InfraTales open-source infrastructure projects.
- * Unauthorized removal of this header violates the license terms.
- *
- * SIGNATURE: INFRATALES-67881E3435FE
- * ═══════════════════════════════════════════════════════════════════════════
- */
-
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
