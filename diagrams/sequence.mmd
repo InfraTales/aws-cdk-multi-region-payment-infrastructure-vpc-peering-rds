@@ -1,0 +1,9 @@
+sequenceDiagram
+    User->>Lambda: Request
+    Lambda->>APIGateway: Request
+    APIGateway->>DDB: Request
+    DDB->>RDS: Request
+    RDS-->>DDB: Response
+    DDB-->>APIGateway: Response
+    APIGateway-->>Lambda: Response
+    Lambda-->>User: Response
