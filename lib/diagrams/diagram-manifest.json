@@ -1,0 +1,27 @@
+{
+  "repo_key": "cdk-ts/Pr11945",
+  "public_slug": "aws-cdk-multi-region-payment-infrastructure-vpc-peering-rds-lambda",
+  "architecture_model_path": "diagrams/architecture_model.json",
+  "diagrams": [
+    {
+      "id": "repo_architecture",
+      "role": "repo",
+      "status": "rendered",
+      "required": true,
+      "placement_key": "repo_docs",
+      "rendered_path": "diagrams/rendered/repo-architecture.png",
+      "caption": "AWS CDK Multi-Region Payment Infrastructure - VPC Peering, RDS, Lambda",
+      "type": "architecture"
+    },
+    {
+      "id": "article_architecture",
+      "role": "article",
+      "status": "rendered",
+      "required": true,
+      "placement_key": "architecture_overview",
+      "rendered_path": "diagrams/rendered/article-architecture.png",
+      "caption": "AWS CDK Multi-Region Payment Infrastructure - VPC Peering, RDS, Lambda",
+      "type": "architecture"
+    }
+  ]
+}
