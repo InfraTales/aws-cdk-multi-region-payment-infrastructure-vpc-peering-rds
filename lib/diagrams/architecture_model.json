@@ -1,0 +1,565 @@
+{
+  "version": 1,
+  "title": "Aws Cdk Multi Region Payment Infrastructure Vpc Peering Rds Lambda",
+  "identity": {
+    "repo_key": "cdk-ts/Pr11945",
+    "public_slug": "aws-cdk-multi-region-payment-infrastructure-vpc-peering-rds-lambda",
+    "article_format": "pattern",
+    "primary_topic_tag": "networking"
+  },
+  "regions": [
+    {
+      "id": "primary",
+      "label": "Primary Region",
+      "region": "",
+      "role": "primary",
+      "evidence": []
+    }
+  ],
+  "boundaries": [
+    {
+      "id": "global",
+      "label": "Global Control Plane",
+      "kind": "global"
+    },
+    {
+      "id": "primary",
+      "label": "Primary Region",
+      "kind": "region"
+    },
+    {
+      "id": "secondary",
+      "label": "Secondary",
+      "kind": "region"
+    }
+  ],
+  "components": [
+    {
+      "id": "route53_dns",
+      "label": "Route 53 Failover DNS",
+      "service": "route53",
+      "category": "ingress",
+      "boundary": "global",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:40 \u2014 \"@aws-cdk/aws-route53-patters:useCertificate\": true,"
+      ]
+    },
+    {
+      "id": "cloudwatch_ops",
+      "label": "CloudWatch Monitoring",
+      "service": "cloudwatch",
+      "category": "observability",
+      "boundary": "global",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:16 \u2014 - **Monitoring**: CloudWatch dashboard, alarms, and logs",
+        "lib/tap-stack.ts:9 \u2014 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';",
+        "lib/MODEL_RESPONSE.md:16 \u2014 - **Monitoring**: CloudWatch dashboard, alarms, and logs"
+      ]
+    },
+    {
+      "id": "stepfunctions_flow",
+      "label": "Step Functions",
+      "service": "stepfunctions",
+      "category": "integration",
+      "boundary": "global",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:48 \u2014 \"@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2\": true,"
+      ]
+    },
+    {
+      "id": "lambda_control",
+      "label": "Failover Lambda",
+      "service": "lambda",
+      "category": "compute",
+      "boundary": "global",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:13 \u2014 - **Compute**: Lambda Node.js 20.x in VPC with reserved concurrency",
+        "lib/tap-stack.ts:5 \u2014 import * as lambda from 'aws-cdk-lib/aws-lambda';",
+        "lib/MODEL_FAILURES.md:14 \u2014 Lambda function configuration included AWS_REGION environment variable:"
+      ]
+    },
+    {
+      "id": "sns_notifications",
+      "label": "SNS Notifications",
+      "service": "sns",
+      "category": "integration",
+      "boundary": "global",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:33 \u2014 \"@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption\": true,"
+      ]
+    },
+    {
+      "id": "audit_s3",
+      "label": "S3 Audit Storage",
+      "service": "s3",
+      "category": "storage",
+      "boundary": "global",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:15 \u2014 - **Storage**: S3 cross-region replication with versioning",
+        "lib/tap-stack.ts:8 \u2014 import * as s3 from 'aws-cdk-lib/aws-s3';",
+        "lib/MODEL_FAILURES.md:18 \u2014 S3_BUCKET_NAME: sourceBucket.bucketName,"
+      ]
+    },
+    {
+      "id": "global_sessions",
+      "label": "DynamoDB Global Tables",
+      "service": "dynamodb",
+      "category": "data",
+      "boundary": "global",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:12 \u2014 - **NoSQL**: DynamoDB with GSIs for customer and status queries",
+        "lib/tap-stack.ts:4 \u2014 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';",
+        "lib/MODEL_FAILURES.md:230 \u2014 - Lambda functions, DynamoDB, S3, RDS, VPC all properly converted"
+      ]
+    },
+    {
+      "id": "primary_app_ingress",
+      "label": "Primary ALB",
+      "service": "alb",
+      "category": "ingress",
+      "boundary": "primary",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:83 \u2014 \"@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault\": true,"
+      ]
+    },
+    {
+      "id": "primary_api",
+      "label": "Primary API Gateway",
+      "service": "api_gateway",
+      "category": "ingress",
+      "boundary": "primary",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:14 \u2014 - **API**: API Gateway HTTP API with Lambda integration",
+        "lib/tap-stack.ts:6 \u2014 import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';",
+        "lib/MODEL_RESPONSE.md:14 \u2014 - **API**: API Gateway HTTP API with Lambda integration"
+      ]
+    },
+    {
+      "id": "primary_compute",
+      "label": "Primary ECS Fargate",
+      "service": "ecs",
+      "category": "compute",
+      "boundary": "primary",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:26 \u2014 \"@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver\": true,"
+      ]
+    },
+    {
+      "id": "primary_database",
+      "label": "RDS Primary",
+      "service": "rds",
+      "category": "data",
+      "boundary": "primary",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption",
+        "lib/tap-stack.ts:3 \u2014 import * as rds from 'aws-cdk-lib/aws-rds';",
+        "lib/MODEL_FAILURES.md:230 \u2014 - Lambda functions, DynamoDB, S3, RDS, VPC all properly converted"
+      ]
+    },
+    {
+      "id": "primary_kms",
+      "label": "KMS",
+      "service": "kms",
+      "category": "security",
+      "boundary": "primary",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption",
+        "lib/tap-stack.ts:11 \u2014 import * as kms from 'aws-cdk-lib/aws-kms';",
+        "lib/MODEL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption"
+      ]
+    },
+    {
+      "id": "primary_secrets",
+      "label": "Secrets Manager",
+      "service": "secretsmanager",
+      "category": "security",
+      "boundary": "primary",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/tap-stack.ts:202 \u2014 credentials: rds.Credentials.fromGeneratedSecret('dbadmin'),",
+        "cdk.json:46 \u2014 \"@aws-cdk/aws-secretsmanager:useAttachedSecretResourcePolicyForSecretTargetAttachments\": true,"
+      ]
+    },
+    {
+      "id": "secondary_app_ingress",
+      "label": "DR ALB",
+      "service": "alb",
+      "category": "ingress",
+      "boundary": "secondary",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:83 \u2014 \"@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault\": true,"
+      ]
+    },
+    {
+      "id": "secondary_compute",
+      "label": "DR ECS Fargate",
+      "service": "ecs",
+      "category": "compute",
+      "boundary": "secondary",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:26 \u2014 \"@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver\": true,"
+      ]
+    },
+    {
+      "id": "secondary_database",
+      "label": "RDS Secondary",
+      "service": "rds",
+      "category": "data",
+      "boundary": "secondary",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption",
+        "lib/tap-stack.ts:3 \u2014 import * as rds from 'aws-cdk-lib/aws-rds';",
+        "lib/MODEL_FAILURES.md:230 \u2014 - Lambda functions, DynamoDB, S3, RDS, VPC all properly converted"
+      ]
+    },
+    {
+      "id": "secondary_kms",
+      "label": "KMS",
+      "service": "kms",
+      "category": "security",
+      "boundary": "secondary",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption",
+        "lib/tap-stack.ts:11 \u2014 import * as kms from 'aws-cdk-lib/aws-kms';",
+        "lib/MODEL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "dns_to_primary",
+      "from": "route53_dns",
+      "to": "primary_app_ingress",
+      "label": "active traffic",
+      "relationship": "request_flow",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:40 \u2014 \"@aws-cdk/aws-route53-patters:useCertificate\": true,",
+        "cdk.json:83 \u2014 \"@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault\": true,"
+      ]
+    },
+    {
+      "id": "dns_to_secondary",
+      "from": "route53_dns",
+      "to": "secondary_app_ingress",
+      "label": "failover target",
+      "relationship": "request_flow",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:40 \u2014 \"@aws-cdk/aws-route53-patters:useCertificate\": true,",
+        "cdk.json:83 \u2014 \"@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault\": true,"
+      ]
+    },
+    {
+      "id": "primary_ingress_compute",
+      "from": "primary_app_ingress",
+      "to": "primary_compute",
+      "label": "app traffic",
+      "relationship": "request_flow",
+      "confidence": "explicit",
+      "evidence": []
+    },
+    {
+      "id": "primary_api_compute",
+      "from": "primary_api",
+      "to": "primary_compute",
+      "label": "API invoke",
+      "relationship": "request_flow",
+      "confidence": "explicit",
+      "evidence": []
+    },
+    {
+      "id": "primary_compute_database",
+      "from": "primary_compute",
+      "to": "primary_database",
+      "label": "transaction data",
+      "relationship": "data_flow",
+      "confidence": "explicit",
+      "evidence": []
+    },
+    {
+      "id": "primary_compute_sessions",
+      "from": "primary_compute",
+      "to": "global_sessions",
+      "label": "session state",
+      "relationship": "data_flow",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:12 \u2014 - **NoSQL**: DynamoDB with GSIs for customer and status queries",
+        "lib/tap-stack.ts:4 \u2014 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';",
+        "lib/MODEL_FAILURES.md:230 \u2014 - Lambda functions, DynamoDB, S3, RDS, VPC all properly converted"
+      ]
+    },
+    {
+      "id": "secondary_ingress_compute",
+      "from": "secondary_app_ingress",
+      "to": "secondary_compute",
+      "label": "standby traffic",
+      "relationship": "request_flow",
+      "confidence": "explicit",
+      "evidence": []
+    },
+    {
+      "id": "secondary_compute_database",
+      "from": "secondary_compute",
+      "to": "secondary_database",
+      "label": "recovered traffic",
+      "relationship": "data_flow",
+      "confidence": "explicit",
+      "evidence": []
+    },
+    {
+      "id": "secondary_compute_sessions",
+      "from": "secondary_compute",
+      "to": "global_sessions",
+      "label": "session state",
+      "relationship": "data_flow",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:12 \u2014 - **NoSQL**: DynamoDB with GSIs for customer and status queries",
+        "lib/tap-stack.ts:4 \u2014 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';",
+        "lib/MODEL_FAILURES.md:230 \u2014 - Lambda functions, DynamoDB, S3, RDS, VPC all properly converted"
+      ]
+    },
+    {
+      "id": "database_replication",
+      "from": "primary_database",
+      "to": "secondary_database",
+      "label": "cross-region replication",
+      "relationship": "replication",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption",
+        "lib/tap-stack.ts:3 \u2014 import * as rds from 'aws-cdk-lib/aws-rds';",
+        "lib/MODEL_FAILURES.md:230 \u2014 - Lambda functions, DynamoDB, S3, RDS, VPC all properly converted"
+      ]
+    },
+    {
+      "id": "stepfunctions_lambda",
+      "from": "stepfunctions_flow",
+      "to": "lambda_control",
+      "label": "orchestrate",
+      "relationship": "control_flow",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:48 \u2014 \"@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2\": true,"
+      ]
+    },
+    {
+      "id": "lambda_dns",
+      "from": "lambda_control",
+      "to": "route53_dns",
+      "label": "update DNS routing",
+      "relationship": "control_flow",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:13 \u2014 - **Compute**: Lambda Node.js 20.x in VPC with reserved concurrency",
+        "lib/tap-stack.ts:5 \u2014 import * as lambda from 'aws-cdk-lib/aws-lambda';",
+        "lib/MODEL_FAILURES.md:14 \u2014 Lambda function configuration included AWS_REGION environment variable:",
+        "cdk.json:40 \u2014 \"@aws-cdk/aws-route53-patters:useCertificate\": true,"
+      ]
+    },
+    {
+      "id": "lambda_database",
+      "from": "lambda_control",
+      "to": "secondary_database",
+      "label": "promote / verify",
+      "relationship": "control_flow",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:13 \u2014 - **Compute**: Lambda Node.js 20.x in VPC with reserved concurrency",
+        "lib/tap-stack.ts:5 \u2014 import * as lambda from 'aws-cdk-lib/aws-lambda';",
+        "lib/MODEL_FAILURES.md:14 \u2014 Lambda function configuration included AWS_REGION environment variable:"
+      ]
+    },
+    {
+      "id": "lambda_sns",
+      "from": "lambda_control",
+      "to": "sns_notifications",
+      "label": "notify operators",
+      "relationship": "control_flow",
+      "confidence": "explicit",
+      "evidence": [
+        "cdk.json:33 \u2014 \"@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption\": true,"
+      ]
+    },
+    {
+      "id": "kms_primary_db",
+      "from": "primary_kms",
+      "to": "primary_database",
+      "label": "encrypt data",
+      "relationship": "security",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption",
+        "lib/tap-stack.ts:11 \u2014 import * as kms from 'aws-cdk-lib/aws-kms';",
+        "lib/MODEL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption"
+      ]
+    },
+    {
+      "id": "kms_secondary_db",
+      "from": "secondary_kms",
+      "to": "secondary_database",
+      "label": "encrypt data",
+      "relationship": "security",
+      "confidence": "explicit",
+      "evidence": [
+        "lib/IDEAL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption",
+        "lib/tap-stack.ts:11 \u2014 import * as kms from 'aws-cdk-lib/aws-kms';",
+        "lib/MODEL_RESPONSE.md:11 \u2014 - **Database**: RDS PostgreSQL 17.4 Multi-AZ with KMS encryption"
+      ]
+    }
+  ],
+  "article_view": {
+    "layout": "LR",
+    "nodes": [
+      {
+        "id": "article_dns",
+        "label": "Route 53\nDNS Failover",
+        "boundary": "global",
+        "components": [
+          "route53_dns"
+        ]
+      },
+      {
+        "id": "article_control",
+        "label": "Failover Control Plane\nCloudWatch + Step Functions + Lambda",
+        "boundary": "global",
+        "components": [
+          "cloudwatch_ops",
+          "stepfunctions_flow",
+          "lambda_control",
+          "sns_notifications"
+        ]
+      },
+      {
+        "id": "article_sessions",
+        "label": "Session State\nDynamoDB Global Tables",
+        "boundary": "global",
+        "components": [
+          "global_sessions"
+        ]
+      },
+      {
+        "id": "article_primary_app",
+        "label": "Primary App Tier\nALB + API Gateway",
+        "boundary": "primary",
+        "components": [
+          "primary_app_ingress",
+          "primary_api",
+          "primary_compute"
+        ]
+      },
+      {
+        "id": "article_primary_data",
+        "label": "Primary Database\nRDS",
+        "boundary": "primary",
+        "components": [
+          "primary_database"
+        ]
+      },
+      {
+        "id": "article_secondary_app",
+        "label": "DR App Tier\nALB + API Gateway",
+        "boundary": "secondary",
+        "components": [
+          "secondary_app_ingress",
+          "secondary_compute"
+        ]
+      },
+      {
+        "id": "article_secondary_data",
+        "label": "DR Database\nRDS",
+        "boundary": "secondary",
+        "components": [
+          "secondary_database"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "article_dns",
+        "to": "article_primary_app",
+        "label": "active traffic",
+        "style": "solid"
+      },
+      {
+        "from": "article_dns",
+        "to": "article_secondary_app",
+        "label": "failover target",
+        "style": "dashed"
+      },
+      {
+        "from": "article_primary_app",
+        "to": "article_primary_data",
+        "label": "transactions",
+        "style": "solid"
+      },
+      {
+        "from": "article_primary_app",
+        "to": "article_sessions",
+        "label": "session state",
+        "style": "solid"
+      },
+      {
+        "from": "article_secondary_app",
+        "to": "article_secondary_data",
+        "label": "recovered traffic",
+        "style": "solid"
+      },
+      {
+        "from": "article_secondary_app",
+        "to": "article_sessions",
+        "label": "global state",
+        "style": "solid"
+      },
+      {
+        "from": "article_primary_data",
+        "to": "article_secondary_data",
+        "label": "Aurora replication",
+        "style": "dashed"
+      },
+      {
+        "from": "article_control",
+        "to": "article_dns",
+        "label": "switch routing",
+        "style": "solid"
+      },
+      {
+        "from": "article_control",
+        "to": "article_secondary_data",
+        "label": "promote / verify",
+        "style": "solid"
+      }
+    ]
+  },
+  "evidence_summary": [
+    "Route 53 Failover DNS: cdk.json:40 \u2014 \"@aws-cdk/aws-route53-patters:useCertificate\": true,",
+    "DynamoDB Global Tables: lib/IDEAL_RESPONSE.md:12 \u2014 - **NoSQL**: DynamoDB with GSIs for customer and status queries",
+    "ECS Fargate: cdk.json:26 \u2014 \"@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver\": true,",
+    "Lambda: lib/IDEAL_RESPONSE.md:13 \u2014 - **Compute**: Lambda Node.js 20.x in VPC with reserved concurrency",
+    "Step Functions: cdk.json:48 \u2014 \"@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2\": true,",
+    "CloudWatch Monitoring: lib/IDEAL_RESPONSE.md:16 \u2014 - **Monitoring**: CloudWatch dashboard, alarms, and logs"
+  ],
+  "confidence_summary": {
+    "explicit_components": 17,
+    "inferred_components": 0,
+    "multi_region": true
+  }
+}
